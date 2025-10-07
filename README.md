@@ -13,6 +13,9 @@ Audit Trail: Complete versioning and logging of all infrastructure changes
 Security First: Built-in security scanning and compliance checks
 Version Control Integration: Automatic Git commits with descriptive messages
 Architecture
+
+
+
 ┌─────────────────┐
 │   User Input    │ (Plain English)
 └────────┬────────┘
