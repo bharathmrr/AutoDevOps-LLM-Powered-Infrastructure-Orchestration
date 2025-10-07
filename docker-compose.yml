@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  autodevops:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autodevops
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://autodevops:password@postgres:5432/autodevops
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./data:/app/data
+      - ./infrastructure:/app/infrastructure
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+    networks:
+      - autodevops-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: autodevops-postgres
+    environment:
+      - POSTGRES_USER=autodevops
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=autodevops
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - autodevops-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: autodevops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - autodevops-network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: autodevops-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - autodevops-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: autodevops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - autodevops-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  ollama-data:
+  prometheus-data:
+
+networks:
+  autodevops-network:
+    driver: bridge
